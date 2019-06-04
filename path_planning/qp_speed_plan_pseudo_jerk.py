@@ -81,44 +81,65 @@ def qp_velocity_planning(s, v, v0, a0, vn, an, w):
     return sol['x']
 
 
-def plot_vel(s, vmax, v):
+def plot_vel(s, vmax, v):  
 
-    plt.subplot(1, 3, 1)
+    plt.figure()
     plt.plot(s, vmax, label="v max")
     plt.plot(s, v, label="v")
     plt.title('velocity')
     plt.legend()
     
-    a_arr = np.diff(v.T, n=1)
-    plt.subplot(1, 3, 2)
-    # plt.plot(s[1:], a_arr, label="accl")
-    # plt.title('acceleration')
-    # plt.legend()
-
-    plt.show()
-
-    print s
-    print s[1:]
-    print v
-    print a_arr.reshape(1, N-1)
 
 
 
 
+def compare_jerk(s, v):
+
+    N = len(s)
+
+    j_approx_quad = np.array(np.zeros(shape=(N, 1)))
+    j_discrete = np.array(np.zeros(shape=(N, 1)))
+    j_d2vds2 = np.array(np.zeros(shape=(N, 1)))
+
+
+    for i in range(2, N-2):
+
+        # quadratic function approximation
+        c0 = s[i-1] * s[i]
+        c1 = s[i-1] * s[i+1]
+        c2 = s[i] * s[i+1]
+        d0 = (c0 - c1 - c2 + s[i+1]*s[i+1])
+        d1 = (c0 + c1 - c2 - s[i-1]*s[i-1])
+        d2 = (c0 - c1 + c2 - s[i]*s[i])
+        e0 = 2 / d0
+        e1 = -2 / d2
+        e2 = -2 / d1
+        j_approx_quad[i] = e0 * v[i+1] + e1 * v[i] + e2 * v[i-1]
+
+        # pure discretization
+        dvds = (v[i+1] - v[i-1]) / (s[i+1] - s[i-1])
+        dvds_next = (v[i+2] - v[i]) / (s[i+2] - s[i]) # for dvds[i+1]
+        dvds_prev = (v[i] - v[i-2]) / (s[i] - s[i-2]) # for dvds[i-1]
+        d2vds2 = (dvds_next - dvds_prev) / (s[i+1] - s[i-1])
+        j_discrete[i] = d2vds2 * (v[i] ** 2) + (dvds ** 2) * v[i]
+
+        j_d2vds2[i] = d2vds2 * v[i]
+
+    plt.figure()
+    plt.plot(s, j_approx_quad, label="j_approx_quad")
+    plt.plot(s, j_discrete, label="d/dt(dv/dt)")
+    plt.plot(s, j_d2vds2, label="d/ds(dv/ds)", linestyle='dashed')
+    plt.title('jerk')
+    plt.legend()
 
 
 
-
-def func(a, b):
-    a = 2.0
-    b = 2.0
-    return a, b
 
 if __name__ == '__main__':
 
-    ds = 0.1
-    v_nominal = 1.0
-    N = 100
+    ds = 0.01
+    v_nominal = 10.0
+    N = 1000
     s_arr = np.array([i for i in range(N)]) * ds
     vmax_arr = np.ones(N) * v_nominal
     vmax_arr[-1] = 0.0
@@ -136,16 +157,12 @@ if __name__ == '__main__':
     w = 2.0
 
     v_arr = qp_velocity_planning(s_arr, vmax_arr, v0, a0, vn, an, w)
-    
-    # print 'v_arr : \n', v_arr
-    # print 'vmax_arr : \n', vmax_arr
+
 
     plot_vel(s_arr, vmax_arr, v_arr)
+    compare_jerk(s_arr, v_arr)
+
+    plt.show()
 
 
-
-
-
-    # print(s_arr)
-    # print(v_arr)
 
