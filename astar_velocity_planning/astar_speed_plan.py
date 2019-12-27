@@ -20,11 +20,11 @@ vref = [3] * Ns
 vmax = [10] * Ns
 vmax[Ns-1] = 0
 
-
+"""
 fig1, ax1 = plt.subplots(1, 1)
 fig1_init_s = True
 fig1_init_l = True
-
+"""
 
 print(vmax)
     
@@ -62,30 +62,23 @@ def getVmax(s):
 def printNode(n, color):
     t = n.var[0]
     s = n.var[1] 
-    if fig1_init_s == True:
-        scats = ax1.scatter(t, s, color=color)
-    else:
-        scats.set_data(t, s)        
-
-    ax1.set_xlim((0, 23))
-    ax1.set_ylim((0, 45))
-
+    plt.figure(1)
+    plt.scatter(t, s, color=color)
+      
+    plt.xlim((0, 23))
+    plt.ylim((0, 45))
 
     m = n.parent_node
     if m:
         mt = m.var[0]
         ms = m.var[1]
-        if fig1_init_l:
-            lines, = ax1.plot([mt, t], [ms, s], color=color)
-        else:
-            scats.set_data([mt, t], [ms, s])
+        plt.plot([mt, t], [ms, s], color=color)
     
     plt.grid()
     plt.pause(.01)
     plt.grid()
 
 
-        
 
     
 def isOccupied(t, s):
