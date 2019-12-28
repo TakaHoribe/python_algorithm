@@ -8,11 +8,8 @@ This is a temporary script file.
 import numpy as np
 import matplotlib.pyplot as plt
 
-goal_t = 20
-goal_s = 40
-
-tmax = 5.0
-dt = 0.5
+tmax = 20.0
+dt = 0.1
 dt_inv = 1.0 / dt
 tdmax = round(tmax / dt)
 
@@ -26,7 +23,6 @@ dv_inv = 1.0 / dv
 
 
 weight_v = 1.0 # weight for (vref - v)^2
-a_max = 10.0
 
 sdarr = list(range(sdmax))
 scarr = []
@@ -37,7 +33,7 @@ vcref = [3] * sdmax
 vcmax = [10] * sdmax
 vcmax[sdmax-1] = 0
 
-aclim = 0.5
+aclim = 50.0
 
 
 
@@ -88,7 +84,7 @@ class Node:
         # return (self.var[0] >= goal_t) or self.var[1] >= goal_s
         # return self.var[1] >= goal_s
         # return (self.getSd() >= sdmax) or self.getTd() >= tdmax
-        return (self.getSd() >= sdmax) 
+        return (self.getSd() == sdmax) 
     
     def getTd(self):
         return self.var[0]
@@ -155,9 +151,11 @@ def getRangeVd(vd):
 
     
 def isOccupiedD(td, sd):
-    if 4 <= td and td <= 7:
-        if 10 <= sd and sd <= 14:
+
+    if 2 <= td and td <= 7:
+        if 10 <= sd and sd <= 24:
             return True
+
     
     return False
 
@@ -165,7 +163,7 @@ if __name__ == '__main__':
     
     open_list     = NodeList()
     close_list    = NodeList()
-    vc0 = 2.0
+    vc0 = 0.0
     start_node    = Node(0, 0, c2dV(vc0)) # t, s, v
     start_node.fs = start_node.hs
     open_list.append(start_node)
@@ -214,9 +212,9 @@ if __name__ == '__main__':
             n_vd = n.getVd()
             for vd in getRangeVd(n_vd): # should be calculated by amax
                 td = n.getTd() + 1
-                sd = n.getSd() + vd
-                print("v = ", vd, ", t = ", td, ", s = ", sd, ", ", vd <= getVdmax(sd), td <= tdmax, (not isOccupiedD(td, sd)))
-                if (vd <= getVdmax(sd) and td <= tdmax and (not isOccupiedD(td, sd))):
+                sd = n.getSd() + n_vd
+                #print("v = ", vd, ", t = ", td, ", s = ", sd, ", ", vd <= getVdmax(sd), td <= tdmax, (not isOccupiedD(td, sd)))
+                if (vd <= getVdmax(sd) and td <= tdmax and sd <= sdmax and (not isOccupiedD(td, sd))):
 
                     m = open_list.find(td, sd, vd)
                     m_dgs = weight_v * d2cV(getRefVd(sd) - vd)**2
