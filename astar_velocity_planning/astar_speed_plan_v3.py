@@ -168,8 +168,15 @@ def generateTSVCandidates(n):
     vdmax = c2dV(vc + aclim * dt)
     vdmin = c2dV(max(vc - aclim * dt, 0.0))
     
+tsv = []    
+    for i in range(N):
+        for j in range(M):
+            
+
+            tmp = (ti, si, vi)
+            tsv.append((tmp)
     
-    
+   return tsv
     
     
     
