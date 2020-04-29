@@ -177,7 +177,7 @@ def plotQP(Q, c, A, b):
     plt.show()
 
 def plotReport(Q, c, A, b, reports):
-    plt.figure(1)
+    plt.figure(1, figsize=(30.0, 10.0))
     plt.subplot(131)
 
     x_min = 0.1
@@ -260,16 +260,7 @@ def main():
             '{0: 7.3f}'.format(r.resi_primal), '{0: 7.3f}'.format(r.resi_dual))
 
     # plotQP(Q, c, A, b)
-    # plotReport(Q, c, A, b, obj.reports)
-
-    x = obj.reports[-1].x
-    y = obj.reports[-1].y
-    z = obj.reports[-1].z
-
-    print("Ax = b : ")
-    print( A * x, b)
-    print("A^Ty + z = Qx + c : ")
-    print(A.transpose() * y + z, Q * x + c)
+    plotReport(Q, c, A, b, obj.reports)
 
 
 
