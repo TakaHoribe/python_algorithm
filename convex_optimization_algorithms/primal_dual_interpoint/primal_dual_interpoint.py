@@ -11,9 +11,10 @@ import scipy.linalg as linalg
 
 class PrimalDualInterpoint():
 
-    class Result():
+    class Report():
         def __init__(self, i=-1, mu=0, alpha=0, x=np.matrix([]), y=np.matrix([]), \
-                     z=np.matrix([]), dx=np.matrix([]), dy=np.matrix([]), dz=np.matrix([])):
+                     z=np.matrix([]), dx=np.matrix([]), dy=np.matrix([]), dz=np.matrix([]), \
+                     obj_primal=0, obj_dual=0, resi_primal=0, resi_dual=0):
             self.i = i
             self.mu = mu
             self.alpha = alpha
@@ -23,15 +24,19 @@ class PrimalDualInterpoint():
             self.dx = dx
             self.dy = dy
             self.dz = dz
+            self.obj_primal = obj_primal
+            self.obj_dual = obj_dual
+            self.resi_primal = resi_primal
+            self.resi_dual = resi_dual
 
     def __init__(self):
         self.initialized = False
-        self.mu0 = 100.0
+        self.mu0 = 10.0
         self.sigma = 0.01  # about 0.1 ~ 0.01
         self.tau = 0.95    # about 0.95 ~ 0.99
         self.max_loop_num = 100
         self.tol_mu = 0.001
-        self.results = []
+        self.reports = []
         
 
     def setProblem(self, Q, c, A, b):
@@ -51,13 +56,23 @@ class PrimalDualInterpoint():
         z = np.matrix(np.ones((self.N, 1))) * self.mu0
         return (x, y, z)
 
+    def calcPrimalObj(self, x):
+        obj_primal = 0.5 * x.transpose() * self.Q * x + self.c.transpose() * x
+        return obj_primal.item()
+
+    def calcDualObj(self, x, y):
+        obj_dual = - 0.5 * x.transpose() * self.Q * x + self.b.transpose() * y 
+        return obj_dual.item()
+
+
     def solve(self):
         if not self.initialized:
             return
 
         (x, y, z) = self.getInitialGuess()
         mu = self.calcDualGap(x, z)
-        self.results.append(PrimalDualInterpoint.Result(i=0, mu=mu, x=x, y=y, z=z))
+        self.reports.append(PrimalDualInterpoint.Report(i=0, mu=mu, x=x, y=y, z=z, \
+                            obj_primal=self.calcPrimalObj(x), obj_dual=self.calcDualObj(x, y)))
 
         for iter_num in range(1, self.max_loop_num):
             (A_pd, B_pd) = self.calcPrimalDualMatrix(x, y, z, mu)
@@ -72,8 +87,11 @@ class PrimalDualInterpoint():
             z = z + alpha * dz
 
             mu = self.calcDualGap(x, z)
-            self.results.append(PrimalDualInterpoint.Result(i=iter_num, mu=mu, alpha=alpha, x=x, y=y, \
-                                                            z=z, dx=dx, dy=dy, dz=dz))
+            self.reports.append(PrimalDualInterpoint.Report(i=iter_num, mu=mu, alpha=alpha, x=x, y=y, \
+                                                            z=z, dx=dx, dy=dy, dz=dz, \
+                                                            obj_primal=self.calcPrimalObj(x), \
+                                                            obj_dual=self.calcDualObj(x, y),
+                                                            resi_primal=B_pd.item(0), resi_dual=B_pd.item(1)))
 
             print("i = ", iter_num)
             print("alpha = ", alpha)
@@ -119,7 +137,7 @@ class PrimalDualInterpoint():
                         [-self.Q, self.A.transpose(), np.eye(N)],
                         [Z, np.zeros((N, N)), X]])
         Bex = np.block([[self.b - self.A * x],
-                        [self.c - self.Q * x - self.A.transpose() * y - z],
+                        [self.c + self.Q * x - self.A.transpose() * y - z],
                         [self.sigma * mu * np.ones((N, 1)) - X * z]])
         # print("Aex = ", Aex)
         # print("Bex = ", Bex)
@@ -158,6 +176,65 @@ def plotQP(Q, c, A, b):
     plt.axis([-0.5, 2, -0.5, 2])
     plt.show()
 
+def plotReport(Q, c, A, b, reports):
+    plt.figure(1)
+    plt.subplot(131)
+
+    x_min = 0.1
+    x_max = 5.31
+    dx = 0.2
+    x = np.arange(x_min, x_max, dx)
+    y = np.arange(x_min, x_max, dx)
+    X,Y = np.meshgrid(x, y)
+    t = np.arange(x_min, x_max, dx)
+    func = lambda x, y : 0.5 * (Q[0, 0] * x**2 + Q[1, 1] * y**2 + 2 * Q[0, 1] * x * y) + c[0, 0] * x + c[1, 0] * y
+    const = [lambda x : -A[i, 0] / A[i, 1] * x + b[i, 0] / A[i, 1] for i in range(A.shape[0])]
+    Z = func(X, Y)
+    s = [const[i](t) for i in range(A.shape[0])]
+    plt.pcolor(X, Y, Z)
+
+    plt.plot(t, np.zeros(len(t)), 'k')
+    plt.plot(np.zeros(len(t)), t, 'k')
+    plt.axis([x_min, x_max, x_min, x_max])
+
+    # plt.xscale('log')
+    # plt.yscale('log')
+
+    for i in range(A.shape[0]):
+        plt.plot(t, s[i], 'gray')
+
+    for i in range(0, len(reports)):
+        plt.subplot(131)
+        plt.plot(reports[i].x[0], reports[i].x[1], 'ko')
+        if i is not 0:
+            yoko = [reports[i-1].x[0].item(), reports[i].x[0].item()]
+            tate = [reports[i-1].x[1].item(), reports[i].x[1].item()]
+            plt.plot(yoko, tate, 'k-')
+
+        plt.subplot(132)
+        # plt.plot(i, reports[i].obj_primal, 'bo', legend='primal')
+        # plt.plot(i, reports[i].obj_dual, 'ro', legend='dual')
+        if i is not 0:
+            plt.plot([i-1, i], [reports[i-1].obj_primal, reports[i].obj_primal], 'b-')
+            plt.plot([i-1, i], [reports[i-1].obj_dual, reports[i].obj_dual], 'r-')
+
+        plt.subplot(133)
+        plt.plot(i, reports[i].mu, 'ko')
+        if i is not 0:
+            plt.plot([i-1, i], [reports[i-1].mu, reports[i].mu], 'k-')
+
+        plt.yscale('log')
+
+        plt.pause(1.0)
+
+
+    # ---------------------------------
+
+
+
+
+    plt.show()
+
 def main():
 
     Q = np.matrix([[2.0, 0.0],
@@ -169,17 +246,30 @@ def main():
     b = np.matrix([[-1.0],
                    [ 5.0]])
 
-    # plotQP(Q, c, A, b)
 
     obj = PrimalDualInterpoint()
     obj.setProblem(Q, c, A, b)
     obj.solve()
 
-    print("|  i   |       mu       | alpha  |               x                |")
-    print("-------------------------------------------------------------------")
-    for r in obj.results:
-        print('{0: 2d}'.format(r.i), '{0: 13.5f}'.format(r.mu), '{0: 6.3f}'.format(r.alpha), r.x.transpose())
+    print("|  i   |       mu       | alpha  |           x            |           y           |          z          | obj prime |  obj dual |   Ax-b   | Qx+x-Ay-z |")
+    print("---------------------------------------------------------------------------------------------------------------------------------")
+    for r in obj.reports:
+        print('{0: 2d}'.format(r.i), '{0: 13.5f}'.format(r.mu), '{0: 6.3f}'.format(r.alpha), '{0: 8.3f}'.format(r.x.item(0)), \
+            '{0: 8.3f}'.format(r.x.item(1)), '{0: 8.3f}'.format(r.y.item(0)), '{0: 8.3f}'.format(r.y.item(1)), \
+            '{0: 8.3f}'.format(r.z.item(0)), '{0: 8.3f}'.format(r.z.item(1)), '{0: 8.3f}'.format(r.obj_primal), '{0: 8.3f}'.format(r.obj_dual), \
+            '{0: 7.3f}'.format(r.resi_primal), '{0: 7.3f}'.format(r.resi_dual))
 
+    # plotQP(Q, c, A, b)
+    # plotReport(Q, c, A, b, obj.reports)
+
+    x = obj.reports[-1].x
+    y = obj.reports[-1].y
+    z = obj.reports[-1].z
+
+    print("Ax = b : ")
+    print( A * x, b)
+    print("A^Ty + z = Qx + c : ")
+    print(A.transpose() * y + z, Q * x + c)
 
 
 
