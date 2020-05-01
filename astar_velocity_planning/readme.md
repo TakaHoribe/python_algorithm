@@ -24,7 +24,7 @@ Figure is plotted like below.
  - Red : Optimal path
  - Gray : Candidates
 
- ![readme_res](/media/res1.png)
+ ![readme_res](./media/res1.png)
 
 
 # Reference
