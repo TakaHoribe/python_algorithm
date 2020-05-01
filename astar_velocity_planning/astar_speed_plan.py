@@ -1,9 +1,4 @@
 # -*- coding: utf-8 -*-
-"""
-Spyder Editor
-
-This is a temporary script file.
-"""
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -20,11 +15,9 @@ vref = [3] * Ns
 vmax = [10] * Ns
 vmax[Ns-1] = 0
 
-"""
-fig1, ax1 = plt.subplots(1, 1)
-fig1_init_s = True
-fig1_init_l = True
-"""
+# fig1, ax1 = plt.subplots(1, 1)
+# fig1_init_s = True
+# fig1_init_l = True
 
 print(vmax)
     
@@ -190,12 +183,14 @@ if __name__ == '__main__':
         
     
     plt.grid()
+    plt.xlabel('t [s]')
+    plt.ylabel('s [m]')
+    plt.show()
     
-    
-    fi2 = plt.figure(3)
-    ax2 = fi2.add_subplot(111)
-    ax2.plot(opt_sarr, opt_varr, label="result")
-    ax2.plot(sarr, vref, label="reference")
-    ax2.plot(sarr, vmax, label="max")
-    ax2.legend()
+    # fi2 = plt.figure(3)
+    # ax2 = fi2.add_subplot(111)
+    # ax2.plot(opt_sarr, opt_varr, label="result")
+    # ax2.plot(sarr, vref, label="reference")
+    # ax2.plot(sarr, vmax, label="max")
+    # ax2.legend()
                 
