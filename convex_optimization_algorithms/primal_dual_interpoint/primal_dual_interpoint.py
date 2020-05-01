@@ -246,6 +246,12 @@ def main():
     b = np.matrix([[-1.0],
                    [ 5.0]])
 
+    # Q = np.matrix([[2.0, 0.0],
+    #                [0.0, 2.0]])
+    # c = np.matrix([[-4.0],
+    #                [-2.0]])
+    # A = np.matrix([[1.0, -1.0]])
+    # b = np.matrix([[-1.0]])
 
     obj = PrimalDualInterpoint()
     obj.setProblem(Q, c, A, b)
