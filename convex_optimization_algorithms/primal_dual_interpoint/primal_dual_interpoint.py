@@ -20,9 +20,9 @@ class PrimalDualInterpoint():
             self.i = i
             self.mu = mu
             self.alpha = alpha
-            self.x = x
-            self.y = y
-            self.z = z
+            self.x = x  # variable for primal problem
+            self.y = y  # lagramge multiplier for g(x)=0
+            self.z = z  # lagramge multiplier for h(x)<=0
             self.dx = dx
             self.dy = dy
             self.dz = dz
@@ -147,18 +147,18 @@ def main():
                    [0.0, 2.0]])
     c = np.matrix([[0.0],
                    [-8.0]])
-    A = np.matrix([[-1.0, 1.0],
-                   [1.0, -1.0],
+    A = np.matrix([[1.0, -1.0],
                    [1.0, 0.0],
                    [0.0,  1.0],
                    [-1.0, 0.0],
-                   [0.0,  -1.0]])
+                   [0.0,  -1.0],
+                   [-2.0, 1.0]])
     b = np.matrix([[3.0],
-                   [3.0],
                    [6.0],
                    [4.0],
                    [0.0],
-                   [0.0]])
+                   [0.0],
+                   [2.0]])
 
     # -- check with analytical solution --
     # Ae = np.matrix([[-1.0, 1.0]])

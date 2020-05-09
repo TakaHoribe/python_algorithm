@@ -41,7 +41,7 @@ def plotReport(Q, c, A, b, reports):
     # plt.pcolor(X, Y, Z, cmap="Oranges")
     plt.contourf(X, Y, Z, 15, cmap="Oranges")
     area1x = [-6, 1, 0, 0, 3, 6, 6, 12, 12, -6]
-    area1y = [4, 4, 3, 0, 0, 3, 4, 4, -6, -6]
+    area1y = [4, 4, 2, 0, 0, 3, 4, 4, -6, -6]
     plt.fill(area1x,area1y,color="gray",alpha=0.4)
     area1x = [-6, 12, 12, -6]
     area1y = [4, 4, 12, 12]
