@@ -1,12 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-# import rospy
 import math
 import time
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.linalg as linalg
+from matplotlib import gridspec
+
+import plot_result
 
 
 class PrimalDualInterpoint():
@@ -93,19 +95,9 @@ class PrimalDualInterpoint():
                                                             obj_dual=self.calcDualObj(x, y),
                                                             resi_primal=B_pd.item(0), resi_dual=B_pd.item(1)))
 
-            # print("i = ", iter_num)
-            # print("alpha = ", alpha)
-            # print("x = ", x.transpose())
-            # print("y = ", y.transpose())
-            # print("z = ", z.transpose())
-            # print("dx = ", dx.transpose())
-            # print("dy = ", dy.transpose())
-            # print("dz = ", dz.transpose())
-            # print("mu = ", mu)
-
             if abs(mu) < self.tol_mu:
                 print("optimization succeeded")
-                break
+                return
 
         print("over max iteration num.")
 
@@ -121,10 +113,6 @@ class PrimalDualInterpoint():
         a = min(self.tau * np.amin(ax), self.tau * np.amin(az), 1.0)
         if a < -1.0E-5:
             print("!!!!!!!! ERROR !!!!!!!!!!!!!!!, a = ", a)
-        # print("np.array(x) = ", np.array(x))
-        # print("np.array(dx) = ", np.array(dx))
-        # print("ax = ", ax)
-        # print("ax.min = ", np.amin(ax))
         return a
 
 
@@ -139,8 +127,6 @@ class PrimalDualInterpoint():
         Bex = np.block([[self.b - self.A * x],
                         [self.c + self.Q * x - self.A.transpose() * y - z],
                         [self.sigma * mu * np.ones((N, 1)) - X * z]])
-        # print("Aex = ", Aex)
-        # print("Bex = ", Bex)
         return (Aex, Bex)
 
     def calcDualGap(self, x, z):
@@ -150,151 +136,7 @@ class PrimalDualInterpoint():
 def solveLinEq(A, b):
     LU = linalg.lu_factor(A)  # LU : much faster than pinv
     delta = linalg.lu_solve(LU, b)
-    # print("delta = ", delta)
     return np.matrix(delta)
-
-def plotQP(Q, c, A, b):
-
-    # plt.figure(1)
-    # plt.subplot(111)
-
-    # # ep = 1.0e-12
-    # # for i in range(A.shape[0]):
-    # #     for j in range(A.shape[1]):
-    # #         if -ep < A[i, j] < ep:
-    # #             A[i, j] = ep
-
-    # b[4,0] = 9
-    # b[5,0]=11
-
-
-    # xmin = -5.0
-    # xmax = 7.0
-    # ymin = -5.0
-    # ymax = 7.0
-    # x = np.arange(xmin, xmax, 0.1)
-    # y = np.arange(ymin, ymax, 0.1)
-    # X,Y = np.meshgrid(x, y)
-    # t = np.arange(-5.0, 8.01, 1.0)
-    # func = lambda x, y : 0.5 * (Q[0, 0] * x**2 + Q[1, 1] * y**2 + 2 * Q[0, 1] * x * y) + c[0, 0] * x + c[1, 0] * y
-    # # const = [lambda x : (-A[i, 0] * x + b[i, 0]) / A[i, 1] for i in range(A.shape[0])]
-    # const = []
-    # for i in range(A.shape[0]):
-    #     const.append(lambda x : (-A[i, 0] * x + b[i, 0]) / A[i, 1])
-    # Z = func(X, Y)
-    # s = [const[i](t) for i in range(A.shape[0])]
-    # plt.pcolor(X, Y, Z)
-
-    # for i in range(A.shape[0]):
-    #     plt.plot(t, s[i], 'gray')
-
-    # # plt.plot(t, np.zeros(len(t)), 'k')
-    # # plt.plot(np.zeros(len(t)), t, 'k')
-    # plt.axis([xmin, xmax, ymin, ymax])
-    # plt.show()
-
-    plt.figure(1, figsize=(30.0, 10.0))
-    plt.subplot(131)
-
-    ep = 1.0e-12
-    for i in range(A.shape[0]):
-        for j in range(A.shape[1]):
-            if -ep < A[i, j] < ep:
-                A[i, j] = ep
-
-
-    xmin = -2.0
-    xmax = 10.5
-    ymin = -2.0
-    ymax = 10.5
-    dx = 0.1
-    ep = 1.0e-5
-    x = np.arange(xmin, xmax + ep, dx)
-    y = np.arange(ymin, ymax + ep, dx)
-    X,Y = np.meshgrid(x, y)
-    t = np.arange(xmin, xmax, 0.1)
-    func = lambda x, y : 0.5 * (Q[0, 0] * x**2 + Q[1, 1] * y**2 + 2 * Q[0, 1] * x * y) + c[0, 0] * x + c[1, 0] * y
-    const = [lambda x : -A[i, 0] / A[i, 1] * x + b[i, 0] / A[i, 1] for i in range(A.shape[0])]
-    Z = func(X, Y)
-    s = [const[i](t) for i in range(A.shape[0])]
-    plt.pcolor(X, Y, Z, cmap="Oranges")
-    area1x = [-6, 1, 0, 0, 3, 6, 6, 12, 12, -6]
-    area1y = [4, 4, 3, 0, 0, 3, 4, 4, -6, -6]
-    plt.fill(area1x,area1y,color="gray",alpha=0.4)
-    area1x = [-6, 12, 12, -6]
-    area1y = [4, 4, 12, 12]
-    plt.fill(area1x,area1y,color="gray",alpha=0.4)
-
-    plt.plot(t, np.zeros(len(t)), 'k')
-    plt.plot(np.zeros(len(t)), t, 'k')
-    plt.axis([xmin, xmax, ymin, ymax])
-
-    plt.subplot(131)
-    for i in range(A.shape[0]):
-        plt.plot(t, s[i], 'gray')
-
-
-def plotReport(Q, c, A, b, reports):
-
-    plotQP(Q, c, A, b)
-
-    plt.subplot(132)
-    plt.xlim(0, len(reports)-1)
-    plt.ylim(reports[0].obj_dual, reports[0].obj_primal)
-
-    plt.subplot(133)
-    plt.xlim(0, len(reports)-1)
-    plt.ylim(reports[-1].mu, reports[0].mu)
-    
-    for i in range(0, len(reports)):
-        plt.subplot(131)
-        plt.plot(reports[i].x[0], reports[i].x[1], 'ko')
-        if i is not 0:
-            yoko = [reports[i-1].x[0].item(), reports[i].x[0].item()]
-            tate = [reports[i-1].x[1].item(), reports[i].x[1].item()]
-            plt.plot(yoko, tate, 'k-')
-
-        plt.subplot(132)
-        if i is 0:
-            plt.plot(i, reports[i].obj_primal, 'bo', label='primal')
-            plt.plot(i, reports[i].obj_dual, 'ro', label='dual')
-        else:
-            plt.plot(i, reports[i].obj_primal, 'bo')
-            plt.plot(i, reports[i].obj_dual, 'ro') 
-        if i is not 0:
-            plt.plot([i-1, i], [reports[i-1].obj_primal, reports[i].obj_primal], 'b-')
-            plt.plot([i-1, i], [reports[i-1].obj_dual, reports[i].obj_dual], 'r-')
-        plt.grid()
-        plt.legend()
-
-        plt.subplot(133)
-        plt.plot(i, reports[i].mu, 'ko')
-        if i is not 0:
-            plt.plot([i-1, i], [reports[i-1].mu, reports[i].mu], 'k-')
-
-        plt.yscale('log')
-        plt.grid(which='minor')
-        plt.grid()
-
-        plt.pause(0.5)
-        plt.subplot(133)
-        plt.grid(which='minor')
-        plt.grid()
-        plt.subplot(132)
-        plt.grid()
-    plt.subplot(133)
-    plt.grid(which='minor')
-    plt.grid()
-    plt.subplot(132)
-    plt.grid()
-
-
-    # ---------------------------------
-
-
-
-
-    plt.show()
 
 def main():
 
@@ -303,8 +145,8 @@ def main():
 
     Q = np.matrix([[2.0, 0.0],
                    [0.0, 2.0]])
-    c = np.matrix([[-10.0],
-                   [-10.0]])
+    c = np.matrix([[0.0],
+                   [-8.0]])
     A = np.matrix([[-1.0, 1.0],
                    [1.0, -1.0],
                    [1.0, 0.0],
@@ -317,7 +159,13 @@ def main():
                    [4.0],
                    [0.0],
                    [0.0]])
-    # plotQP(Q, c, A, b)
+
+    # -- check with analytical solution --
+    # Ae = np.matrix([[-1.0, 1.0]])
+    # be = np.matrix([[3]])
+    # Z = np.block([[Q, Ae.transpose()], [Ae, np.zeros((1, 1))]])
+    # r = np.block([[-c], [be]])
+    # print(solveLinEq(Z, r))
 
     Qreg = np.block([[Q, np.zeros((N, M))], [np.zeros((M, N)), np.zeros((M, M))]])
     creg = np.block([[c], [np.zeros((M, 1))]])
@@ -337,13 +185,9 @@ def main():
             '|{0: 8.3f}'.format(r.z.item(0)), ',{0: 8.3f}'.format(r.z.item(1)), '|{0: 8.3f}'.format(r.obj_primal), '|{0: 8.3f}'.format(r.obj_dual), \
             '|{0: 7.3f}'.format(r.resi_primal), '|{0: 7.3f}'.format(r.resi_dual))
 
-    plotReport(Q, c, A, b, obj.reports)
+    plot_result.plotReport(Q, c, A, b, obj.reports)
 
 
 
 if __name__ == "__main__":
     main()
-
-
-
-# https://qiita.com/shiro-kuma/items/a51f44f209b6f935787a
