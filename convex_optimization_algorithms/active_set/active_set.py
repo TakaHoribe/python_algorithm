@@ -16,12 +16,13 @@ epsilon = 1.0e-8
 class ActiveSet():
 
     class Report():
-        def __init__(self, i=-1, alpha=-1, x=np.matrix([]), y=np.matrix([]), dx=np.matrix([]), W=[]):
+        def __init__(self, i=-1, alpha=-1, x=np.matrix([]), y=np.matrix([]), x_ideal=np.matrix([]), dx=np.matrix([]), W=[]):
             self.i = i
             self.alpha = alpha
             self.x = x  # variable for primal problem
             self.y = y  # lagramge multiplier for g(x)=0
             self.dx = dx
+            self.x_ideal = x_ideal
             # self.W = W
             self.W = W.copy()
 
@@ -83,50 +84,34 @@ class ActiveSet():
 
         W = [0]  # initial constraint candidate
         for iter_num in range(1, self.max_loop_num):
-            print(" --------------------------------  ")
-            print("AAAA = ", self.reports[0].W)
-            print("i = ", iter_num)
-
             (x_next, y_next) = self.solveConstrLinEq(W)
             dx = x_next - x
-            print("x_next = ", x_next.transpose())
-            print("y_next = ", y_next.transpose())
 
             alpha = self.calcStepRatio(x, dx, W)
-            print("alpha = ", alpha)
             x = x + alpha * dx
             y = y_next
 
-            print("x = ", x.transpose())
-            print("y = ", y.transpose())
-            print("W = ", W)
-            self.reports.append(ActiveSet.Report(i=iter_num, alpha=alpha, x=x, y=y, dx=dx, W=W))
+            self.reports.append(ActiveSet.Report(i=iter_num, alpha=alpha, x=x, y=y, x_ideal=x_next, dx=dx, W=W))
 
 
-            # 移動中に拘束条件に引っかからなかった場合
+            # no constraint while moving
             if alpha > 0.999999:
-                print("Judge : alpha == 1")
-                # ラグランジュ乗数が全て正なら、そこが最適解
+                # if all lagrange multipliers are positive, it is an optimal point.
                 if  y.size == 0 or (y >= -epsilon).all():
                     print("optimization succeeded!")
                     return
-                # ラグランジュに負のものがあれば、それを取り除いて再計算
+                # remove lagrange multiplier if it is negative.
                 else:
-                    print("y < 0 is found")
                     for i in range(len(y)):
                         if y[i] < -epsilon:
-                            print("y[", i, "]  = ", y[i], " < 0 is being deleted, and optimize again.")
                             del W[i]
                             break
-            else: # 移動中に拘束条件に引っかかった場合（alpha < 1）、Wを拘束条件から再設定
+            else: # moving is constrainted (alpha < 1), reset active active set for next step
                 W_next = []
                 resi = self.A * x - self.b
                 for i in range(len(resi)):
                     if abs(resi[i].item()) < epsilon:
                         W_next.append(i)
-                print("Judge : alpha < 1 : len(W_k) = ", len(W), ", len(W_k+1) = ", len(W))
-                print("W_k = ", W)
-                print("W_k+1 = ", W_next)
                 W = W_next
                  
         print("over max iteration num.")
@@ -135,15 +120,11 @@ class ActiveSet():
         mu_k_min = 1.0
         for i in range(self.M):
             if i in W:
-                print("calcStepRatio() : i = ", i, ", is in W. continue.")
                 continue
             den = (self.A[i,:] * dx).item()
-            print("calcStepRatio() : i = ", i, ", den = ", den, ", A[i,:] = ", self.A[i,:], ", dx = ", dx.transpose())
             if den > 0:
                 mu_k = (self.b[i] - self.A[i,:] * x).item() / den
-                print("calcStepRatio() : i = ", i, ", is not in W. mu = ", mu_k, " (mu_k_min = ", mu_k_min, ")")
                 if mu_k < mu_k_min:
-                    print("mu_k < mu_k_min. updated")
                     mu_k_min = mu_k
         return mu_k_min
 
@@ -153,15 +134,23 @@ def solveLinEq(A, b):
     delta = linalg.lu_solve(LU, b)
     return np.matrix(delta)
 
+def solveQP(Q, c, A, b):
+    obj = ActiveSet()
+    obj.setProblem(Q, c, A, b)
+    obj.solve()
+
+    print("| i |  alpha  |        x          |        y          | W |")
+    print("---------------------------------------------------------------------------------------------------------------------------------")
+    for r in obj.reports:
+        print('|{0: 2d}'.format(r.i), '|{0: 8.2f}'.format(r.alpha), '|{0: 8.3f}'.format(r.x.item(0)), \
+            ',{0: 8.3f}'.format(r.x.item(1)), "|  ", r.y.transpose(), "|  ", r.W)
+    plot_result.plotReport(Q, c, A, b, obj.reports)
+
 def main():
 
-    N = 2
-    M = 6
+    # N = 2
+    # M = 6
 
-    Q = np.matrix([[2.0, 0.0],
-                   [0.0, 2.0]])
-    c = np.matrix([[0.0],
-                   [-8.0]])
     A = np.matrix([[1.0, -1.0],
                    [1.0, 0.0],
                    [0.0,  1.0],
@@ -174,19 +163,28 @@ def main():
                    [0.0],
                    [0.0],
                    [2.0]])
+                   
+    # No.1
+    Q = np.matrix([[2.0, -0.],
+                   [-0., 2.0]])
+    c = np.matrix([[.0],
+                   [-8.0]])
+    solveQP(Q, c, A, b)
 
+    # No.2
+    Q = np.matrix([[2.0, -1.5],
+                   [-1.5, 2.0]])
+    c = np.matrix([[2.0],
+                   [-6.0]])
+    solveQP(Q, c, A, b)
 
-    obj = ActiveSet()
-    obj.setProblem(Q, c, A, b)
-    obj.solve()
+    # No.3
+    Q = np.matrix([[2.0, .0],
+                   [.0, 2.0]])
+    c = np.matrix([[-20.0],
+                   [-2.0]])
+    solveQP(Q, c, A, b)
 
-    print("| i |  alpha  |        x          |        y          | W |")
-    print("---------------------------------------------------------------------------------------------------------------------------------")
-    for r in obj.reports:
-        print('|{0: 2d}'.format(r.i), '|{0: 8.2f}'.format(r.alpha), '|{0: 8.3f}'.format(r.x.item(0)), \
-            ',{0: 8.3f}'.format(r.x.item(1)), "|  ", r.y.transpose(), "|  ", r.W)
-
-    plot_result.plotReport(Q, c, A, b, obj.reports)
 
 
 

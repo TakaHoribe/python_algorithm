@@ -140,35 +140,9 @@ def solveLinEq(A, b):
     delta = linalg.lu_solve(LU, b)
     return np.matrix(delta)
 
-def main():
-
-    N = 2
-    M = 6
-
-    Q = np.matrix([[2.0, 0.0],
-                   [0.0, 2.0]])
-    c = np.matrix([[0.0],
-                   [-8.0]])
-    A = np.matrix([[1.0, -1.0],
-                   [1.0, 0.0],
-                   [0.0,  1.0],
-                   [-1.0, 0.0],
-                   [0.0,  -1.0],
-                   [-2.0, 1.0]])
-    b = np.matrix([[3.0],
-                   [6.0],
-                   [4.0],
-                   [0.0],
-                   [0.0],
-                   [2.0]])
-
-    # -- check with analytical solution --
-    # Ae = np.matrix([[-1.0, 1.0]])
-    # be = np.matrix([[3]])
-    # Z = np.block([[Q, Ae.transpose()], [Ae, np.zeros((1, 1))]])
-    # r = np.block([[-c], [be]])
-    # print(solveLinEq(Z, r))
-
+def solveQP(Q, c, A, b):
+    N = len(c)
+    M = len(b)
     Qreg = np.block([[Q, np.zeros((N, M))], [np.zeros((M, N)), np.zeros((M, M))]])
     creg = np.block([[c], [np.zeros((M, 1))]])
     Areg = np.block([[A, np.eye(M)]])
@@ -188,6 +162,50 @@ def main():
             '|{0: 7.3f}'.format(r.resi_primal), '|{0: 7.3f}'.format(r.resi_dual))
 
     plot_result.plotReport(Q, c, A, b, obj.reports)
+
+
+def main():
+    A = np.matrix([[1.0, -1.0],
+                   [1.0, 0.0],
+                   [0.0,  1.0],
+                   [-1.0, 0.0],
+                   [0.0,  -1.0],
+                   [-2.0, 1.0]])
+    b = np.matrix([[3.0],
+                   [6.0],
+                   [4.0],
+                   [0.0],
+                   [0.0],
+                   [2.0]])
+    # No.1
+    Q = np.matrix([[2.0, -0.],
+                   [-0., 2.0]])
+    c = np.matrix([[.0],
+                   [-8.0]])
+    solveQP(Q, c, A, b)
+
+    # No.2
+    Q = np.matrix([[2.0, -1.5],
+                   [-1.5, 2.0]])
+    c = np.matrix([[2.0],
+                   [-6.0]])
+    solveQP(Q, c, A, b)
+
+    # No.3
+    Q = np.matrix([[2.0, .0],
+                   [.0, 2.0]])
+    c = np.matrix([[-20.0],
+                   [-2.0]])
+    solveQP(Q, c, A, b)
+
+
+    # -- check with analytical solution --
+    # Ae = np.matrix([[-1.0, 1.0]])
+    # be = np.matrix([[3]])
+    # Z = np.block([[Q, Ae.transpose()], [Ae, np.zeros((1, 1))]])
+    # r = np.block([[-c], [be]])
+    # print(solveLinEq(Z, r))
+
 
 
 

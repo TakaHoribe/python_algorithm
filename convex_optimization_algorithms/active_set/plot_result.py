@@ -34,6 +34,7 @@ def plotReport(Q, c, A, b, reports):
 
     M = b.shape[0]
     fig = plt.figure(1, figsize=(10.0, 7.0))
+    plt.clf()
     gs = fig.add_gridspec(1, 10)
     ax1 = fig.add_subplot(gs[0, 0:7], xlabel='x1', ylabel='x2')
     ax2 = fig.add_subplot(gs[0, 8:10], title="lagrange multplier")
@@ -83,15 +84,23 @@ def plotReport(Q, c, A, b, reports):
     
     plt.pause(1.0)
 
-    constr_lines = []
+    tmp_lines = []
     for i in range(1, len(reports)):
-        for line in constr_lines:
+        for line in tmp_lines:
                 line.remove()
-        constr_lines = []
+        tmp_lines = []
         for j in range(A.shape[0]):
             if j in reports[i].W:
                 l, = ax1.plot(t, s[j], "red")
-                constr_lines.append(l)
+                tmp_lines.append(l)
+
+        yoko_i = [reports[i-1].x[0].item(), reports[i].x_ideal[0].item()]
+        tate_i = [reports[i-1].x[1].item(), reports[i].x_ideal[1].item()]
+        l1, = ax1.plot(yoko_i, tate_i, 'b--')
+        l2, = ax1.plot(reports[i].x_ideal[0], reports[i].x_ideal[1], 'bo')
+        tmp_lines.append(l1)
+        tmp_lines.append(l2)
+
         yoko = [reports[i-1].x[0].item(), reports[i].x[0].item()]
         tate = [reports[i-1].x[1].item(), reports[i].x[1].item()]
         ax1.plot(yoko, tate, 'k-')
@@ -102,6 +111,8 @@ def plotReport(Q, c, A, b, reports):
         ax2b = ax2.bar(range(1,M+1), y_bar, width=0.5)
         print("i = ", i, ", y_bar = ", y_bar)
 
-        plt.pause(0.5)
+        plt.pause(0.1)
+    ax1.plot(reports[-1].x[0], reports[-1].x[1], '*', color="k", markersize=15)
 
-    plt.show()
+    # plt.show()
+    plt.pause(1.0)

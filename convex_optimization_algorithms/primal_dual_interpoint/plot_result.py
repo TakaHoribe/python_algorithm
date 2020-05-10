@@ -23,6 +23,7 @@ def removeZeroFromMat(A):
 
 def plotReport(Q, c, A, b, reports):
     fig = plt.figure(1, figsize=(10.0, 7.0))
+    plt.clf()
     gs = fig.add_gridspec(2, 10)
     ax1 = fig.add_subplot(gs[:, 0:7], xlabel='x1', ylabel='x2')
     ax2 = fig.add_subplot(gs[0, 8:10], title="object value")
@@ -31,6 +32,8 @@ def plotReport(Q, c, A, b, reports):
     ax2.grid()
     ax3.grid()
     ax3.grid(which='minor')
+
+    A = removeZeroFromMat(A)
 
     # set color map
     xmin = -2.0
@@ -67,7 +70,10 @@ def plotReport(Q, c, A, b, reports):
 
     # plot objective variables
     ax2.set_xlim(0, len(reports)-1)
-    ax2.set_ylim(reports[0].obj_dual, reports[0].obj_primal)
+    max_primal = max([reports[i].obj_primal for i in range(len(reports))])
+    min_dual = min([reports[i].obj_dual for i in range(len(reports))])
+    ax2.set_ylim(min_dual, max_primal)
+    # ax2.set_ylim(reports[0].obj_dual, reports[0].obj_primal)
     ax2.plot(0, reports[0].obj_primal, 'bo', label='primal')
     ax2.plot(0, reports[0].obj_dual, 'ro', label='dual')
     ax2.legend()
@@ -93,6 +99,9 @@ def plotReport(Q, c, A, b, reports):
         ax3.plot(i, reports[i].mu, 'ko')
         ax3.plot([i-1, i], [reports[i-1].mu, reports[i].mu], 'k-')
 
-        plt.pause(0.5)
+        plt.pause(0.1)
 
-    plt.show()
+    ax1.plot(reports[-1].x[0], reports[-1].x[1], 'k*', markersize=15)
+
+    # plt.show()
+    plt.pause(1.0)
