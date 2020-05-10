@@ -13,19 +13,36 @@ def problemFunc(x, y, Q, c):
 def ProblemConstr(x, A, b):
     return [-A[i, 0] / A[i, 1] * x + b[i, 0] / A[i, 1] for i in range(A.shape[0])]
 
-def plotReport(Q, c, A, b, reports):
+def getLagrangeMultiplierArray(M, report):
+    y_arr = np.zeros(M)
+    k = 0
+    for j in range(M):
+        if j in report.W:
+            y_arr[j] = report.y[k].item()
+            k += 1
+    return y_arr
 
-    plt.figure(1, figsize=(12.0, 6.0))
-    gs = gridspec.GridSpec(1,3, width_ratios=[3,1,1]) 
-    plt.subplot(gs[0])
-
+def removeZeroFromMat(A):
     ep = 1.0e-12
     for i in range(A.shape[0]):
         for j in range(A.shape[1]):
             if -ep < A[i, j] < ep:
                 A[i, j] = ep
+    return A
+
+def plotReport(Q, c, A, b, reports):
+
+    M = b.shape[0]
+    fig = plt.figure(1, figsize=(10.0, 7.0))
+    gs = fig.add_gridspec(1, 10)
+    ax1 = fig.add_subplot(gs[0, 0:7], xlabel='x1', ylabel='x2')
+    ax2 = fig.add_subplot(gs[0, 8:10], title="lagrange multplier")
+    ax2.grid()
 
 
+    A = removeZeroFromMat(A)
+
+    # set color map
     xmin = -2.0
     xmax = 10.5
     ymin = -2.0
@@ -38,93 +55,53 @@ def plotReport(Q, c, A, b, reports):
     t = np.arange(xmin, xmax, 0.1)
     Z = problemFunc(X, Y, Q, c)
     s = ProblemConstr(t, A, b)
-    # plt.pcolor(X, Y, Z, cmap="Oranges")
-    plt.contourf(X, Y, Z, 15, cmap="Oranges")
+    ax1.contourf(X, Y, Z, 15, cmap="Oranges")
+
+    # fill feasible area
     area1x = [-6, 1, 0, 0, 3, 6, 6, 12, 12, -6]
     area1y = [4, 4, 2, 0, 0, 3, 4, 4, -6, -6]
-    plt.fill(area1x,area1y,color="gray",alpha=0.4)
-    area1x = [-6, 12, 12, -6]
-    area1y = [4, 4, 12, 12]
-    plt.fill(area1x,area1y,color="gray",alpha=0.4)
-    plt.xlabel("x1")
-    plt.ylabel("x2")
+    ax1.fill(area1x,area1y,color="gray",alpha=0.4)
+    area2x = [-6, 12, 12, -6]
+    area2y = [4, 4, 12, 12]
+    ax1.fill(area2x,area2y,color="gray",alpha=0.4)
 
-    plt.plot(t, np.zeros(len(t)), 'k')
-    plt.plot(np.zeros(len(t)), t, 'k')
-    plt.axis([xmin, xmax, ymin, ymax])
+    # plot constraint line
+    ax1.plot(t, np.zeros(len(t)), 'k')
+    ax1.plot(np.zeros(len(t)), t, 'k')
+    ax1.axis([xmin, xmax, ymin, ymax])
+    for i in range(A.shape[0]):
+        ax1.plot(t, s[i], 'gray')
+
+    ax1.plot(reports[0].x[0], reports[0].x[1], 'ko')
+
+
+    ax2.set_xlim(0, M+0.5)
+    ax2.set_ylim(-5, 5)
+    ax2.plot(range(10), np.zeros(10), 'k')
+    y_bar = getLagrangeMultiplierArray(M, reports[0])
+    ax2b = ax2.bar(range(1,M+1), y_bar, width=0.5)
+    
+    plt.pause(1.0)
 
     constr_lines = []
-    for i in range(A.shape[0]):
-        l, = plt.plot(t, s[i], 'gray')
-        constr_lines.append(l)
-    # constr_lines = [plt.plot(t, s[i], 'gray') for i in range(A.shape[0])]
-
-    plt.subplot(gs[1])
-    plt.xlim(0, len(reports)-1)
-    # plt.ylim(reports[0].obj_dual, reports[0].obj_primal)
-    plt.title("object value")
-
-    plt.subplot(gs[2])
-    plt.xlim(0, len(reports)-1)
-    # plt.ylim(reports[-1].mu, reports[0].mu)
-    plt.title("dual gap")
-    
-    plt.pause(0.1)
-
-    for i in range(0, len(reports)):
-        plt.subplot(gs[0])
-        plt.plot(reports[i].x[0], reports[i].x[1], 'ko')
-        if i is not 0:
-            yoko = [reports[i-1].x[0].item(), reports[i].x[0].item()]
-            tate = [reports[i-1].x[1].item(), reports[i].x[1].item()]
-            plt.plot(yoko, tate, 'k-')
-        for j in range(A.shape[0]):
-                constr_lines[j].remove()
+    for i in range(1, len(reports)):
+        for line in constr_lines:
+                line.remove()
         constr_lines = []
         for j in range(A.shape[0]):
-            color = "red" if j in reports[i].W else "gray"
-            l, = plt.plot(t, s[j], color)
-            constr_lines.append(l)
+            if j in reports[i].W:
+                l, = ax1.plot(t, s[j], "red")
+                constr_lines.append(l)
+        yoko = [reports[i-1].x[0].item(), reports[i].x[0].item()]
+        tate = [reports[i-1].x[1].item(), reports[i].x[1].item()]
+        ax1.plot(yoko, tate, 'k-')
+        ax1.plot(reports[i].x[0], reports[i].x[1], 'ko')
 
-
-        plt.subplot(gs[1])
-        # if i is 0:
-        #     plt.plot(i, reports[i].obj_primal, 'bo', label='primal')
-        #     plt.plot(i, reports[i].obj_dual, 'ro', label='dual')
-        # else:
-        #     plt.plot(i, reports[i].obj_primal, 'bo')
-        #     plt.plot(i, reports[i].obj_dual, 'ro') 
-        # if i is not 0:
-        #     plt.plot([i-1, i], [reports[i-1].obj_primal, reports[i].obj_primal], 'b-')
-        #     plt.plot([i-1, i], [reports[i-1].obj_dual, reports[i].obj_dual], 'r-')
-        # plt.grid()
-        # plt.legend()
-
-        plt.subplot(gs[2])
-        # plt.plot(i, reports[i].mu, 'ko')
-        # if i is not 0:
-        #     plt.plot([i-1, i], [reports[i-1].mu, reports[i].mu], 'k-')
-
-        # plt.yscale('log')
-        # plt.grid(which='minor')
-        # plt.grid()
+        y_bar = getLagrangeMultiplierArray(M, reports[i])
+        ax2b.remove()
+        ax2b = ax2.bar(range(1,M+1), y_bar, width=0.5)
+        print("i = ", i, ", y_bar = ", y_bar)
 
         plt.pause(0.5)
-        plt.subplot(gs[2])
-        plt.grid(which='minor')
-        plt.grid()
-        plt.subplot(gs[1])
-        plt.grid()
-    plt.subplot(gs[2])
-    plt.grid(which='minor')
-    plt.grid()
-    plt.subplot(gs[1])
-    plt.grid()
-
-
-    # ---------------------------------
-
-
-
 
     plt.show()

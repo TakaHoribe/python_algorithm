@@ -79,9 +79,9 @@ class ActiveSet():
             return
 
         (x, y) = self.getInitialGuess()
-        W = [0]  # initial constraint candidate
-        self.reports.append(ActiveSet.Report(i=0, alpha=0, x=x, y=y, dx=0.0, W=W))
+        self.reports.append(ActiveSet.Report(i=0, alpha=0, x=x, y=y, dx=0.0))
 
+        W = [0]  # initial constraint candidate
         for iter_num in range(1, self.max_loop_num):
             print(" --------------------------------  ")
             print("AAAA = ", self.reports[0].W)

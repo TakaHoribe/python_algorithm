@@ -3,6 +3,8 @@
 
 import math
 import time
+import matplotlib as mpl
+mpl.use('tkagg')
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.linalg as linalg
