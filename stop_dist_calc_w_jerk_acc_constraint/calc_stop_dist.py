@@ -4,23 +4,21 @@ import matplotlib.pyplot as plt
 import copy
 import pandas as pd
 
-class Times {
-    def __init__(self):
-        self.t_dec_jerk
-        self.t_non_jerk
-        self.t_acc_jerk
-}
+class Times:
+    def __init__(self, t1=0, t2=0, t3=0):
+        self.dec_jerk_time = t1
+        self.zero_jerk_time = t2
+        self.acc_jerk_time = t3
 
-class Params {
-    def __init__(self):
-        self.v0
-        self.v_end
-        self.a0
-        self.max_acc
-        self.min_acc
-        self.max_jerk
-        self.min_jerk 
-}
+class Params:
+    def __init__(self, v0=0, v_end=0, a0=0, max_acc=0, min_acc=0, max_jerk=0, min_jerk=0):
+        self.v0 = v0
+        self.v_end = v_end
+        self.a0 = a0
+        self.max_acc = max_acc
+        self.min_acc = min_acc
+        self.max_jerk = max_jerk
+        self.min_jerk  = min_jerk 
 
 
 class StopDistCalculator:
@@ -50,117 +48,78 @@ class StopDistCalculator:
         self.jerks.append(jerk)
         self.times.append(t + t_offset)
 
-    def trapezoid_shape(self, v0, a0, a_min, j_acc, j_dec, t_min):
+    def trapezoid_shape(self, params, times):
 
-        t1 = max((a_min - a0) / j_dec, 0.0)
-        t2 = max(t_min, 0.0)
-        t3 = max(-a_min / j_acc, 0.0)
-        print("t1: %f, t2: %f, t3: %f" % (t1, t2, t3))
-
-        # 0 ~ t1
+        # applying decel jerk
+        a0 = params.a0
+        v0 = params.v0
         x0 = 0.0
-        for t in np.linspace(0.0, t1, 100, endpoint=True):
-            jerk = j_dec
+        for t in np.linspace(0.0, times.dec_jerk_time, 100, endpoint=True):
+            jerk = params.min_jerk
             t_offset = 0.0
             self.update(t, jerk, a0, v0, x0, t_offset)
 
-        # t1 ~ t2
+        # applying zero jerk
         a1 = self.accs[-1]
         v1 = self.vels[-1]
         x1 = self.dists[-1]
-        for t in np.linspace(0.0, t2, 100, endpoint=True):
+        for t in np.linspace(0.0, times.zero_jerk_time, 100, endpoint=True):
             jerk = 0.0
-            t_offset = t1
+            t_offset = times.dec_jerk_time
             self.update(t, jerk, a1, v1, x1, t_offset)
 
-        # t2 ~ t3
+        # applying decel jerk
         a2 = self.accs[-1]
         v2 = self.vels[-1]
         x2 = self.dists[-1]
-        for t in np.linspace(0.0, t3, 100, endpoint=True):
-            jerk = j_acc
-            t_offset = t1 + t2
+        for t in np.linspace(0.0, times.acc_jerk_time, 100, endpoint=True):
+            jerk = params.max_jerk
+            t_offset = times.zero_jerk_time + times.dec_jerk_time
             self.update(t, jerk, a2, v2, x2, t_offset)
 
-
-
-    def triangle_shape_v1(self, v0, ved,  a0, a_min, j_acc, j_dec):
-
-        a_min2_square = 2 * (ved - v0 + (0.5 * a0 * a0 / j_dec)) * ((j_dec * j_acc) / (j_acc - j_dec))
-        a_min2 = -np.sqrt(a_min2_square)
-
-        t1 = max((a_min2 - a0) / j_dec, 0.0)
-        print("t1: %f" % t1)
-
-
-        t2 = 0.0
-        a1 = 0.0
-        v1 = 0.0
-        x1 = 0.0
-        if t1 > 1e-3:
-            print("v1")
-            t2 = max(-a_min2 / j_acc, 0.0)
-
-            # 0 ~ t1
-            for t in np.linspace(0.0, t1, 100, endpoint=True):
-                jerk = j_dec
-                x0 = 0.0
-                self.update(t, jerk, a0, v0, x0, t_offset)
-
-            a1 = accs[-1]
-            v1 = vels[-1]
-            x1 = dists[-1]
-
+    def calc_stop_times(self, p):
+        times = Times()
+        print("%f, %f, %f" % (p.min_jerk, p.max_jerk, p.min_acc))
+        times.zero_jerk_time = (p.v_end - p.v0 + (0.5 * p.a0 * p.a0 / p.min_jerk) - (0.5 * p.min_acc * p.min_acc / p.min_jerk) + (0.5 * p.min_acc * p.min_acc / p.max_jerk)) / p.min_acc
+        jerk_plan_type = ''
+        if (times.zero_jerk_time > 0):
+            jerk_plan_type = 'dec_zero_acc'
+            times.dec_jerk_time = (p.min_acc - p.a0) / p.min_jerk
+            times.acc_jerk_time = -p.min_acc / p.max_jerk
         else:
-            print("v2")
-            t2 = max(-a0 / j_acc, 0.0)
+            min_acc_actual = -np.sqrt(2 * (ved - p.v0 + (0.5 * p.a0 * p.a0 / p.min_jerk)) * ((p.min_jerk * p.max_jerk) / (p.max_jerk - p.min_jerk)))
+            
+            if (p.a0 > min_acc_actual):
+                jerk_plan_type = 'dec_acc'
+                times.dec_jerk_time = (min_acc_actual - p.a0) / p.min_jerk
+                times.acc_jerk_time = (-(p.a0 + p.min_jerk * dec_jerk_time) / p.max_jerk)
+            else:
+                jerk_plan_type = 'acc'
+                times.dec_jerk_time = 0.0
+                times.acc_jerk_time = -p.a0 / p.max_jerk
+        
+        print("jerk_plan_type = " + jerk_plan_type)
+        print("t_dec_zero_acc = [%f, %f, %f]" % (times.dec_jerk_time, times.zero_jerk_time, times.acc_jerk_time))
 
-            a1 = a0
-            v1 = v0
+        times.dec_jerk_time = max(times.dec_jerk_time, 0.0)
+        times.zero_jerk_time = max(times.zero_jerk_time, 0.0)
+        times.acc_jerk_time = max(times.acc_jerk_time, 0.0)
+        return times
 
-            v_true = (0.5) * j_acc * t2 * t2
-            if math.fabs(v_true - v0) > 0.03:
-                print("invalid v0 setting: v_true: %f, v0: %f" % ((v_true * 3.6), (v0 * 3.6)))
-                return [0.0], [0.0], [0.0], [0.0], [0.0]
+    def calc_stop_dist(self, params):
 
-        # t1 ~ t2
-        for t in np.linspace(0.0, t2, 100, endpoint=True):
-            jerk = j_acc
-            self.update(t, jerk, a1, v1, x1, t1)
-
-
-
-    def calc_stop_dist(self, v0, ved, a0, a_min, j_acc, j_dec):
-
-        if a0 < a_min:
-            print("invalid a0 setting: a0: %f, a_min: %f" % (a0, a_min))
+        if params.a0 < params.min_acc:
+            print("invalid a0 setting: a0: %f, a_min: %f" % (params.a0, params.a_min))
             return [0.0], [0.0], [0.0], [0.0], [0.0]
 
-        if v0 <= ved:
-            print("ved is larger than v0: v0: %f, ved: %f" % (v0, ved))
+        if params.v0 <= params.v_end:
+            print("ved is larger than v0: v0: %f, ved: %f" % (params.v0, params.v_end))
             return [0.0], [0.0], [0.0], [0.0], [0.0]
 
-        times = calc_stop_time_sequence()
+        times = self.calc_stop_times(params)
+        self.trapezoid_shape(params, times)
 
-        t_min = (ved - v0 + (0.5 * a0 * a0 / j_dec) - (0.5 * a_min * a_min / j_dec) + (0.5 * a_min * a_min / j_acc)) / a_min
-        # print("t min : %f" % t_min)
-
-        dists = []
-        vels = []
-        accs = []
-        jerks = []
-        times = []
-
-        if t_min > 0:
-            print("type: trapezoid")
-            self.trapezoid_shape(v0, a0, a_min, j_acc, j_dec, t_min)
-        else:
-            print("type: triangle")
-            self.triangle_shape_v1(v0, ved, a0, a_min, j_acc, j_dec)
-
-    def visualize(self, v0_kmh, ved_kmh, a0, min_acc, acc_jerk, dec_jerk):
-
-        self.calc_stop_dist(v0_kmh / 3.6, ved_kmh / 3.6,  a0, min_acc, acc_jerk, dec_jerk)
+    def visualize(self, params):
 
         plt.figure(figsize=(20, 10))
         
@@ -169,7 +128,7 @@ class StopDistCalculator:
         plt.xlabel("Time [sec]")
         plt.ylabel("Distance [m]")
         plt.title("Distance [m]")
-        print("(x, t, v, a) = (%f, %f, %f, %f)" % (self.dists[-1], self.times[-1], self.vels[-1], self.accs[-1]))
+        print("(stop dist, stop time, end velocity, end acceleration) = (%f, %f, %f, %f)" % (self.dists[-1], self.times[-1], self.vels[-1], self.accs[-1]))
 
         plt.subplot(2, 3, 2)
         vels_kmh = list(map(lambda x: x * 3.6, self.vels))
@@ -202,22 +161,25 @@ class StopDistCalculator:
         df['acc'] = self.accs
         df['jerk'] = self.jerks
         df['time'] = self.times
-        df.to_csv(str(v0_kmh) + "kmph_" + str(ved_kmh) + "kmph_" + str(a0) + "mps2_" + str(min_acc) + "mps2_" + str(acc_jerk) + "mps3_" + str(dec_jerk) + "mps3" + ".csv")
+        df.to_csv(str(params.v0 * 3.6) + "kmph_" + str(params.v_end * 3.6) + "kmph_" + str(params.a0) + "mps2_" + str(params.min_acc) + "mps2_" + str(params.max_jerk) + "mps3_" + str(params.min_jerk) + "mps3" + ".csv")
 
         plt.show()
 
 if __name__ == '__main__':
 
-    stop_dist_calc = StopDistCalculator()
+    KMPH2MPS = 1.0 / 3.6
+    params = Params()
+    params.v0 = 20.0 * KMPH2MPS
+    params.v_end = 0.0 * KMPH2MPS
+    params.a0 = 0.5
+    params.min_acc = -1.0
+    params.max_jerk = 0.3
+    params.min_jerk = -0.3
 
-    v0_kmh = 20
-    ved_kmh = 0
-    a0 = 0.5
-    min_acc = -1.0
-    acc_jerk = 0.3
-    dec_jerk = -0.3
+    obj = StopDistCalculator()
 
-    stop_dist_calc.visualize(v0_kmh, ved_kmh, a0, min_acc, acc_jerk, dec_jerk)
+    obj.calc_stop_dist(params)
+    obj.visualize(params)
 
 
 
