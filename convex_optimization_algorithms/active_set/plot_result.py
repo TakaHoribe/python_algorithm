@@ -81,7 +81,7 @@ def plotReport(Q, c, A, b, reports):
     ax2.plot(range(10), np.zeros(10), 'k')
     y_bar = getLagrangeMultiplierArray(M, reports[0])
     ax2b = ax2.bar(range(1,M+1), y_bar, width=0.5)
-    
+
     plt.pause(1.0)
 
     tmp_lines = []

@@ -41,7 +41,7 @@ class PrimalDualInterpoint():
         self.max_loop_num = 100
         self.tol_mu = 0.001
         self.reports = []
-        
+
 
     def setProblem(self, Q, c, A, b):
         self.Q = Q
@@ -65,7 +65,7 @@ class PrimalDualInterpoint():
         return obj_primal.item()
 
     def calcDualObj(self, x, y):
-        obj_dual = - 0.5 * x.transpose() * self.Q * x + self.b.transpose() * y 
+        obj_dual = - 0.5 * x.transpose() * self.Q * x + self.b.transpose() * y
         return obj_dual.item()
 
 

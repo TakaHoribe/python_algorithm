@@ -30,7 +30,7 @@ class ActiveSet():
         self.initialized = False
         self.max_loop_num = 100
         self.reports = []
-        
+
 
     def setProblem(self, Q, c, A, b):
         self.Q = Q
@@ -55,7 +55,7 @@ class ActiveSet():
             return (res, np.matrix([]))
 
         (Ak, bk) = self.getCurrentConstraintMat(W)
-        
+
         # generate lagrange matrix
         mk = len(W)
         A = np.block([[self.Q, Ak.transpose()], [Ak, np.zeros((mk, mk))]])
@@ -113,7 +113,7 @@ class ActiveSet():
                     if abs(resi[i].item()) < epsilon:
                         W_next.append(i)
                 W = W_next
-                 
+
         print("over max iteration num.")
 
     def calcStepRatio(self, x, dx, W):
@@ -163,7 +163,7 @@ def main():
                    [0.0],
                    [0.0],
                    [2.0]])
-                   
+
     # No.1
     Q = np.matrix([[2.0, -0.],
                    [-0., 2.0]])

@@ -82,7 +82,7 @@ def plotReport(Q, c, A, b, reports):
     ax3.set_xlim(0, len(reports)-1)
     ax3.set_ylim(reports[-1].mu, reports[0].mu)
     ax3.plot(0, reports[0].mu, 'ko')
-    
+
     plt.pause(0.1)
 
     for i in range(1, len(reports)):
@@ -92,7 +92,7 @@ def plotReport(Q, c, A, b, reports):
         ax1.plot(yoko, tate, 'k-')
 
         ax2.plot(i, reports[i].obj_primal, 'bo')
-        ax2.plot(i, reports[i].obj_dual, 'ro') 
+        ax2.plot(i, reports[i].obj_dual, 'ro')
         ax2.plot([i-1, i], [reports[i-1].obj_primal, reports[i].obj_primal], 'b-')
         ax2.plot([i-1, i], [reports[i-1].obj_dual, reports[i].obj_dual], 'r-')
 
