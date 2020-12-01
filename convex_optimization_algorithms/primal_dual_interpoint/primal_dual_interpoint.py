@@ -74,7 +74,7 @@ class PrimalDualInterpoint():
             return
 
         (x, y, z) = self.getInitialGuess()
-        mu = self.calcDualGap(x, z)
+        mu = self.calcComplementarityGap(x, z)
         self.reports.append(PrimalDualInterpoint.Report(i=0, mu=mu, x=x, y=y, z=z, \
                             obj_primal=self.calcPrimalObj(x), obj_dual=self.calcDualObj(x, y)))
 
@@ -90,7 +90,7 @@ class PrimalDualInterpoint():
             y = y + alpha * dy
             z = z + alpha * dz
 
-            mu = self.calcDualGap(x, z)
+            mu = self.calcComplementarityGap(x, z)
             self.reports.append(PrimalDualInterpoint.Report(i=iter_num, mu=mu, alpha=alpha, x=x, y=y, \
                                                             z=z, dx=dx, dy=dy, dz=dz, \
                                                             obj_primal=self.calcPrimalObj(x), \
@@ -131,7 +131,7 @@ class PrimalDualInterpoint():
                         [self.sigma * mu * np.ones((N, 1)) - X * z]])
         return (Aex, Bex)
 
-    def calcDualGap(self, x, z):
+    def calcComplementarityGap(self, x, z):
         mu = (x.transpose() * z) / self.N
         return mu.item()
 
