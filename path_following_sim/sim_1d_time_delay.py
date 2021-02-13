@@ -65,18 +65,7 @@ def model_1d(x, t, v, tau, kp, kd):
     dx[2] = - (1.0 / tau) * (w - u)
     return dx
 
-if __name__ == '__main__':
-
-
-    t = np.arange(0, 10, 0.01)
-    if SIM_WITH_DELAY:
-        g = lambda t: x0 # history before t=0
-        res_x = ddeint(model_1d_delay, g, t, fargs=(velocity, time_constant, p_gain, d_gain, time_delay))
-    else:
-        res_x = odeint(model_1d, x0, t, args=(velocity, time_constant, p_gain, d_gain))
-    res_u = calc_control_input(p_gain, d_gain, np.array(res_x[:, 0]), np.array(res_x[:,1]))
-
-
+def plot_result(res_x, res_u):
     plt.rcParams["font.size"] = 18
     plt.rcParams["lines.linewidth"] = 2
 
@@ -102,3 +91,16 @@ if __name__ == '__main__':
 
     plt.grid()
     plt.show()
+
+
+if __name__ == '__main__':
+
+    t = np.arange(0, 10, 0.01)
+    if SIM_WITH_DELAY:
+        g = lambda t: x0 # history before t=0
+        res_x = ddeint(model_1d_delay, g, t, fargs=(velocity, time_constant, p_gain, d_gain, time_delay))
+    else:
+        res_x = odeint(model_1d, x0, t, args=(velocity, time_constant, p_gain, d_gain))
+    res_u = calc_control_input(p_gain, d_gain, np.array(res_x[:, 0]), np.array(res_x[:,1]))
+
+    plot_result(res_x, res_u)
