@@ -101,4 +101,4 @@ if __name__ == '__main__':
     plt.legend()
 
     plt.grid()
-    # plt.show()
+    plt.show()
