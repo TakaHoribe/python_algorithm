@@ -9,22 +9,37 @@ import math
 import argparse
 
 # sim parameters
-velocity = 0.2
+SIM_WITH_DELAY = False
 time_constant = 0.01
+time_delay = 0.3
+velocity = 0.2
 p_gain = 1.0
 d_gain = 0.7
-time_delay = 0.3
 x0 = [0.1, 0.0, 0.0]
 
 # option for SIM_WITH_DELAY
 parser = argparse.ArgumentParser()
-parser.add_argument('-d', '--sim_with_delay', help='set true if sim with delay time is needed')
+parser.add_argument('-D', '--sim_with_delay', action='store_true', help='set if sim with delay time is needed')
+parser.add_argument('-v', '--velocity', help='sim parameter: velocity', type=float)
+parser.add_argument('-d', '--time_delay', help='sim parameter: delay time', type=float)
+parser.add_argument('-t', '--time_constant', help='sim parameter: time constant', type=float)
+parser.add_argument('-kp', '--p_gain', help='sim parameter: p gain', type=float)
+parser.add_argument('-kd', '--d_gain', help='sim parameter: d gain', type=float)
 args = parser.parse_args()
-if args.sim_with_delay == None:
-    SIM_WITH_DELAY = False
-else:
-    SIM_WITH_DELAY = bool(args.sim_with_delay)
-print("run simulation: delay option = ", SIM_WITH_DELAY)
+SIM_WITH_DELAY = args.sim_with_delay
+if args.velocity != None:
+    velocity = args.velocity
+if args.p_gain != None:
+    p_gain = args.p_gain
+if args.d_gain != None:
+    d_gain = args.d_gain
+if args.time_constant != None:
+    time_constant = args.time_constant
+if args.time_delay != None:
+    time_delay = args.time_delay
+
+print("run simulation: sim_with_delay = ", SIM_WITH_DELAY)
+print("parameters: v = {},  tau = {},  delay = {},  kp = {},  kd = {}".format(velocity, time_constant, time_delay, p_gain, d_gain))
 
 
 def calc_control_input(kp, kd, laterr, theta):
@@ -61,6 +76,10 @@ if __name__ == '__main__':
         res_x = odeint(model_1d, x0, t, args=(velocity, time_constant, p_gain, d_gain))
     res_u = calc_control_input(p_gain, d_gain, np.array(res_x[:, 0]), np.array(res_x[:,1]))
 
+
+    plt.rcParams["font.size"] = 18
+    plt.rcParams["lines.linewidth"] = 2
+
     plt.figure(figsize=(20, 20))
     plt.subplot(3, 1, 1)
     plt.plot(t, res_x[:,0])
@@ -82,4 +101,4 @@ if __name__ == '__main__':
     plt.legend()
 
     plt.grid()
-    plt.show()
+    # plt.show()
