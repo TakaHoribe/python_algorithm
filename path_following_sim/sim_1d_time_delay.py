@@ -8,6 +8,8 @@ import numpy as np
 import math
 import argparse
 
+import simulator_core
+
 # sim parameters
 SIM_WITH_DELAY = False
 time_constant = 0.01
@@ -42,29 +44,6 @@ print("run simulation: sim_with_delay = ", SIM_WITH_DELAY)
 print("parameters: v = {},  tau = {},  delay = {},  kp = {},  kd = {}".format(velocity, time_constant, time_delay, p_gain, d_gain))
 
 
-def calc_control_input(kp, kd, laterr, theta):
-    return - kp * laterr - kd * theta
-
-def model_1d_delay(x, t, v, tau, kp, kd, delay):
-    e, theta, w = x(t)
-    e_delay, theta_delay, w_delay  = x(t-delay)
-    u = calc_control_input(kp, kd, e_delay, theta_delay)
-    dx = [0, 0, 0]
-    dx[0] = v * math.sin(theta)
-    dx[1] = w
-    dx[2] = - (1.0 / tau) * (w - u)
-    return dx
-
-
-def model_1d(x, t, v, tau, kp, kd):
-    e, theta, w = x
-    u = calc_control_input(kp, kd, e, theta)
-    dx = [0, 0, 0]
-    dx[0] = v * math.sin(theta)
-    dx[1] = w
-    dx[2] = - (1.0 / tau) * (w - u)
-    return dx
-
 def plot_result(res_x, res_u):
     plt.rcParams["font.size"] = 18
     plt.rcParams["lines.linewidth"] = 2
@@ -96,11 +75,8 @@ def plot_result(res_x, res_u):
 if __name__ == '__main__':
 
     t = np.arange(0, 10, 0.01)
-    if SIM_WITH_DELAY:
-        g = lambda t: x0 # history before t=0
-        res_x = ddeint(model_1d_delay, g, t, fargs=(velocity, time_constant, p_gain, d_gain, time_delay))
-    else:
-        res_x = odeint(model_1d, x0, t, args=(velocity, time_constant, p_gain, d_gain))
-    res_u = calc_control_input(p_gain, d_gain, np.array(res_x[:, 0]), np.array(res_x[:,1]))
+    param = simulator_core.ModelParams(v=velocity, tau=time_constant, delay=time_delay, kp=p_gain, kd=d_gain)
+    sim = simulator_core.Simulator()
+    res_x, res_u = sim.run(x0, t, SIM_WITH_DELAY, param)
 
     plot_result(res_x, res_u)
