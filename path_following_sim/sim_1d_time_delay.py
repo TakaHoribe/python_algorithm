@@ -51,13 +51,11 @@ def plot_result(res_x, res_u):
     plt.figure(figsize=(20, 20))
     plt.subplot(3, 1, 1)
     plt.plot(t, res_x[:,0])
-    plt.xlabel("Time [sec]")
     plt.ylabel("Lateral error [m]")
     plt.grid()
 
     plt.subplot(3, 1, 2)
     plt.plot(t, res_x[:,1] * 180.0 / 3.1415)
-    plt.xlabel("Time [sec]")
     plt.ylabel("Heading error [deg]")
     plt.grid()
 

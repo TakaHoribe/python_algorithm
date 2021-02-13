@@ -76,9 +76,3 @@ if __name__ == '__main__':
 
 
     plt.show()
-
-    # param_A = simulator.ModelParams(velocity, time_constant, p_gain, d_gain, time_delay)
-    # sim_A = simulator.Simulator()
-    # res_x, res_u = sim.run(x0, t, SIM_WITH_DELAY, param)
-
-    # plot_result(res_x, res_u)

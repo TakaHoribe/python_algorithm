@@ -46,15 +46,15 @@ optional arguments:
 ```
 
 
-## param_tune_for_two_models.py
+## grid_search_pd_for_two_models.py
 
 Do grid-search for `PD` gain parameter tuning. Simulation runs for two models to compare (NOTE: this is a very special use case).
 
-You need to set some parameters defined in `param_tune_for_two_models.py`. The `velocity`, `kp_range`, `kd_range` are common parameters, `time_delay` and `time_constant` are for both of model-A, and model-B.
+You need to set some parameters defined in `grid_search_pd_for_two_models.py`. The `velocity`, `kp_range`, `kd_range` are common parameters, `time_delay` and `time_constant` are for both of model-A, and model-B.
 
 The `len(kp_range) * len(kd_range)` number of figures will be displayed.
 
 
 ```
-$ pipenv run python ./path_following_sim/param_tune_for_two_models.py
+$ pipenv run python ./path_following_sim/grid_search_pd_for_two_models.py
 ```
