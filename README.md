@@ -1,5 +1,7 @@
 # Requirements
 
+
+Managed by `pipenv`.
 ```
 $ pip install pipenv
 $ pipenv install
@@ -74,4 +76,50 @@ calculate stop dist and plot the result.
 
 ```
 $ pipenv run python stop_dist_calc_w_jerk_acc_constraint/calc_with_plots.py
+```
+
+
+## Path Following Sim
+### sim_1d_time_delay.py
+
+```
+$ pipenv run python ./path_following_sim/sim_1d_time_delay.py
+```
+
+<p align="center">
+  <img src="./path_following_sim/media/sim_res_1d_delay.png" width="800">
+</p>
+
+
+#### model
+
+Path following error dynamics with `time_delay: tau` and `time_constant: d`
+
+<p align="left">
+  <img src="./path_following_sim/media/model.png" width="200">
+</p>
+
+#### args
+
+`-h` shows help for usage.
+
+```
+$ pipenv run python3 ./path_following_sim/sim_1d_time_delay.py -h
+
+usage: sim_1d_time_delay.py [-h] [-D] [-v VELOCITY] [-d TIME_DELAY]
+                            [-t TIME_CONSTANT] [-kp P_GAIN] [-kd D_GAIN]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -D, --sim_with_delay  set if sim with delay time is needed
+  -v VELOCITY, --velocity VELOCITY
+                        sim parameter: velocity
+  -d TIME_DELAY, --time_delay TIME_DELAY
+                        sim parameter: delay time
+  -t TIME_CONSTANT, --time_constant TIME_CONSTANT
+                        sim parameter: time constant
+  -kp P_GAIN, --p_gain P_GAIN
+                        sim parameter: p gain
+  -kd D_GAIN, --d_gain D_GAIN
+                        sim parameter: d gain
 ```
