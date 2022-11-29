@@ -58,7 +58,7 @@ if __name__ == '__main__':
 
     while calculator.time() < Tj + Ta + Tj + Tv + Tj:
         calculator.integrate(-jerk)
-    x_5 = 5.0 / 6.0 * jerk * Tj**3 + 3.0 / 2.0 * jerk * Ta * Tj**2 + 1.0 / 2.0 * jerk * Ta**2 * Tj + jerk*(Ta + Tj)*Tj*(Tv + Tj)
+    x_5 = 11.0 / 6.0 * jerk * Tj**3 + 5.0 / 2.0 * jerk * Ta * Tj**2 + 1.0 / 2.0 * jerk * Ta**2 * Tj + jerk*(Ta + Tj)*Tj*Tv
     v_5 = jerk * Tj * (Ta + 1.0 / 2.0 * Tj)
     print("x5: {}, sim: {}, v5: {}, sim: {}".format(x_5, calculator.x, v_5, calculator.v))
 
@@ -72,6 +72,3 @@ if __name__ == '__main__':
         calculator.integrate(jerk)
     x_7 = 2.0 * jerk * Tj**3 + 3.0 * jerk * Ta * Tj**2 + jerk * Ta**2 * Tj + jerk*(Ta + Tj)*Tj*Tv
     print("x7: {}, sim: {}".format(x_7, calculator.x))
-
-
-    
