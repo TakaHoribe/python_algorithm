@@ -14,7 +14,7 @@ def calcFromJerk():
     for Le in (0.5, 1.0, 2.0, 3.0, 4.0, 5.0):
 
         Tj = alim / jerk
-        Ta = (math.sqrt(alim**4 + 4.0*(jerk**2)*Le*alim) - 3.0 * alim**2) / (2.0 * alim * jerk)
+        Ta = (math.sqrt(alim**2 + 4.0*(jerk**2)*Le/alim) - 3.0 * alim) / (2.0 * jerk)
         if Ta > 0.0:
             print("jerk: {}, acc: {}, shift_length: {}, T_total: {}, T_jerk: {}, T_acc: {}".format(jerk, alim, Le, Tj*4.0 + Ta*2.0, Tj, Ta))
         else:
