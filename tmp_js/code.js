@@ -20,55 +20,81 @@ function update(t, j, a0, v0, x0) {
   return [x, v, a]
 }
 
+//
+// pos_jerk, zero_jerk, neg_jerkを掛ける時間をそれぞれ計算し、時間方向にupdate
+//
 function calcStopDist(a0, v0, amin, amax, jmin, jmax, delay_time) {
 
+  // 遅延時間分、v0, a0で状態を進める
   var x0 = 0.0;
-  //  console.log("x_ini = ", 0.0, "v_init = ", v0, "a_ini = ", a0)
   var state0 = update(delay_time, 0.0, a0, v0, x0);
   x0 = state0[0]
   v0 = state0[1]
   a0 = state0[2]
-  //  console.log("x0 = ", state0[0], "v0 = ", state0[1], "a0 = ", state0[2])
-
-
+  
   var v_end = 0.0;
   var zero_jerk_time = (v_end - v0 + 0.5 * (a0*a0 - amin*amin) / jmin + (0.5 * amin*amin / jmax)) / amin;
   var dec_jerk_time = 0.0;
   var acc_jerk_time = 0.0;
   if (zero_jerk_time > 0) {
+    // 台形
     // jerk_plan_type = 'dec_zero_acc'
     dec_jerk_time = (amin - a0) / jmin;
     acc_jerk_time = -amin / jmax;
   } else {
     var min_acc_actual = -Math.sqrt(2.0 * (v_end - v0 + (0.5 * a0**2 / jmin)) * ((jmin * jmax) / (jmax - jmin)));
     if (a0 > min_acc_actual) {
+      // 一回減速してから加速
       // jerk_plan_type = 'dec_acc'
       dec_jerk_time = (min_acc_actual - a0) / jmin;
       acc_jerk_time = -min_acc_actual / jmax;
     } else {
+      // 加速オンリー
       // jerk_plan_type = 'acc'
       dec_jerk_time = 0.0;
       acc_jerk_time = -a0 / jmax;
     }
   }
 
-
   dec_jerk_time = Math.max(dec_jerk_time, 0.0);
   zero_jerk_time = Math.max(zero_jerk_time, 0.0);
   acc_jerk_time = Math.max(acc_jerk_time, 0.0);
 
-
   var state1 = update(dec_jerk_time, jmin, state0[2], state0[1], state0[0]);
-  //  console.log("x1 = ", state1[0], "v1 = ", state1[1], "a1 = ", state1[2])
-
   var state2 = update(zero_jerk_time, 0.0, state1[2], state1[1], state1[0]);
-  //  console.log("x2 = ", state2[0], "v2 = ", state2[1], "a2 = ", state2[2])
-
   var state3 = update(acc_jerk_time, jmax, state2[2], state2[1], state2[0]);
-  //  console.log("x3 = ", state3[0], "v3 = ", state3[1], "a3 = ", state3[2])
 
+
+  //  console.log("x_ini = ", 0.0, "v_init = ", v0, "a_ini = ", a0)
+  //  console.log("x0 = ", state0[0], "v0 = ", state0[1], "a0 = ", state0[2])
+  //  console.log("x1 = ", state1[0], "v1 = ", state1[1], "a1 = ", state1[2])
+  //  console.log("x2 = ", state2[0], "v2 = ", state2[1], "a2 = ", state2[2])
+  //  console.log("x3 = ", state3[0], "v3 = ", state3[1], "a3 = ", state3[2])
+  
   var total_time = dec_jerk_time + zero_jerk_time + acc_jerk_time + delay_time;
   return [state3[0], state3[1], state3[2], total_time]
+}
+
+//
+// ジャーク制約を守って停止できない（終端条件a=0が守れない）場合の計算（常にpos_jerk全開）
+//
+function calcStopDistAllPosJerk(a0, v0, amin, amax, jmin, jmax, delay_time) {
+  var t;
+  if (v0 + a0 * delay_time < 0.0) {
+    var t = -v0 / a0;
+    var state = update(t, 0.0, a0, v0, 0.0);
+    // console.log("calcStopDistAllPosJerk1() : t = ", t, "xe = ", state[0], "ve = ", state[1], "ae = ", state[2]);
+    return [state[0], state[1], state[2], t]
+  } else {
+    var state1 = update(delay_time, 0.0, a0, v0, 0.0);
+    var x1 = state1[0];
+    var v1 = state1[1];
+    var a1 = state1[2];
+    var t = (-a1 - Math.sqrt(a1 * a1 - 2.0 * v1 * jmax)) / jmax;
+    var state = update(t, jmax, a1, v1, x1);
+    // console.log("calcStopDistAllPosJerk2() : t = ", t, "xe = ", state[0], "ve = ", state[1], "ae = ", state[2]);
+    return [state[0], state[1], state[2], t + delay_time];
+  }
 }
 
 
@@ -77,9 +103,9 @@ function calculate() {
   var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("stop_distance");
 
 
-  var value_range_str = "F4:AJ54";
+  var value_range_str = "F4:BN54";
   var a0_range_str = "E4:E54";
-  var v0_range_str = "F3:AJ3";
+  var v0_range_str = "F3:BN3";
   var parameter_range_str = "B4:B8";
 
   // get parameters
@@ -116,22 +142,28 @@ function calculate() {
     for (var column = 0; column < COL_NUM; column++) {
       var v0 = v0arr[0][column];
       if (validCheck(a0, v0, min_acc, max_acc, min_jerk, max_jerk)) {
+        // pos_jerk, zero_jerk, neg_jerkを掛ける時間をそれぞれ計算し、時間方向にupdate
         var state = calcStopDist(a0, v0, min_acc, max_acc, min_jerk, max_jerk, delay_time);
         var x = state[0]
         var v = state[1]
         var a = state[2]
         var t = state[3]
-
+        
         if (Math.abs(a) < 0.1 && Math.abs(v) < 0.1) {
           dist_table[row][column] = x;
           time_table[row][column] = t;
         } else {
-          // ジャーク制約を守って停止できない（終端条件a=0が守れない）場合の計算をする（終端はa=0でなくても良い場合。）
+         // ジャーク制約を守って停止できない（終端条件a=0が守れない）場合の計算（常にpos_jerk全開）
+         var state = calcStopDistAllPosJerk(a0, v0, min_acc, max_acc, min_jerk, max_jerk, delay_time);
+         //dist_table[row][column] = '(' + String(state[0]) + ')'; // x
+         //time_table[row][column] = '(' + String(state[3]) + ')'; // t
+          dist_table[row][column] = '[' + String(state[0].toFixed(2)) + ']'; // x
+          time_table[row][column] = '[' + String(state[3].toFixed(2)) + ']'; // t
         }
       }
     }
   }
-
+  
   // write values on sheet
   range.setValues(dist_table);
   range_time.setValues(time_table);
