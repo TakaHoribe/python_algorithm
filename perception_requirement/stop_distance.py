@@ -42,7 +42,7 @@ class StopDistCalculator:
         self.param = param
         return
 
-    def set_params(self, v0=None, v_end=None, a0=None, max_acc=None, min_acc=None, max_jerk=None, min_jerk=None, delay_time=None, print=None):
+    def set_individual_param(self, v0=None, v_end=None, a0=None, max_acc=None, min_acc=None, max_jerk=None, min_jerk=None, delay_time=None, print=None):
         if v0 is not None:
             self.v0 = v0
         if v_end is not None:
@@ -64,6 +64,21 @@ class StopDistCalculator:
         return
 
     def update(self, t, jerk, a0, v0, x0, t_offset):
+        a = a0 + jerk * t
+        v = v0 + (a0 * t) + (0.5 * jerk * t * t)
+        x = x0 + (v0 * t) + (0.5 * a0 * t * t) + ((1.0 / 6.0) * jerk * t * t * t)
+        return (x, v, a)
+
+    def update_with_constraint(self, t, jerk, a0, v0, x0, t_offset=0.0):
+        if a0 < self.param.min_acc or self.param.max_acc < a0:
+            a0 = max(self.param.min_acc, min(self.param.max_acc, a0))
+            jerk = 0.0
+        
+        if v0 < 0.0:
+            v0 = 0.0
+            a0 = 0.0
+            jerk = 0.0
+
         a = a0 + jerk * t
         v = v0 + (a0 * t) + (0.5 * jerk * t * t)
         x = x0 + (v0 * t) + (0.5 * a0 * t * t) + ((1.0 / 6.0) * jerk * t * t * t)
@@ -139,21 +154,23 @@ class StopDistCalculator:
         return (x3, total_t)
 
     # apply decel jerk and acceleration for given time and return the velocity at the time
+
     def calc_dist_after_decel_time(self, v0, t):
-        tj = self.param.min_acc / self.param.min_jerk
-        ta = max(t - tj, 0.0)
-        (x1, v1, a1) = self.update(t=tj, jerk=self.param.min_jerk, a0=0.0, v0=v0, x0=0.0, t_offset=0.0)
-        (x2, v2, a2) = self.update(t=ta, jerk=0.0, a0=self.param.min_acc, v0=v1, x0=x1, t_offset=0.0)
-        return x2, v2
+        dt = 0.001
+        x, v, a = 0.0, v0, 0.0
+        for t in np.arange(0.0, t, dt):
+            (x_next, v_next, a_next) = self.update_with_constraint(t=dt, jerk=self.param.min_jerk, a0=a, v0=v, x0=x, t_offset=0.0)
+            x, v, a = x_next, v_next, a_next
+        return x, v
 
     # apply accel jerk and acceleration for given time and return the velocity at the time
     def calc_dist_after_accel_time(self, v0, t):
-        tj = self.param.max_acc / self.param.max_jerk
-        ta = max(t - tj, 0.0)
-        (x1, v1, a1) = self.update(t=tj, jerk=self.param.max_jerk, a0=0.0, v0=v0, x0=0.0, t_offset=0.0)
-        (x2, v2, a2) = self.update(t=ta, jerk=0.0, a0=self.param.max_acc, v0=v1, x0=x1, t_offset=0.0)
-        return x2, v2
-
+        dt = 0.001
+        x, v, a = 0.0, v0, 0.0
+        for t in np.arange(0.0, t, dt):
+            (x_next, v_next, a_next) = self.update_with_constraint(t=dt, jerk=self.param.max_jerk, a0=a, v0=v, x0=x, t_offset=0.0)
+            x, v, a = x_next, v_next, a_next
+        return x, v
 
 class LateralDistCalculator:
     def __init__(self, max_lat_acc=None, max_lat_jerk=None, lat_dist=None, print=False):

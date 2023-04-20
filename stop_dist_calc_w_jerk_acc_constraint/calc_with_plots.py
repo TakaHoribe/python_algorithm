@@ -79,18 +79,21 @@ class StopDistCalculator:
 
     def calc_stop_times(self, p):
         times = Times()
-        times.zero_jerk_time = (p.v_end - p.v0 + (0.5 * p.a0 * p.a0 / p.min_jerk) - (0.5 * p.min_acc * p.min_acc / p.min_jerk) + (0.5 * p.min_acc * p.min_acc / p.max_jerk)) / p.min_acc
+        times.zero_jerk_time = (p.v_end - p.v0 + (0.5 * p.a0 * p.a0 / p.min_jerk) - (
+            0.5 * p.min_acc * p.min_acc / p.min_jerk) + (0.5 * p.min_acc * p.min_acc / p.max_jerk)) / p.min_acc
         if (times.zero_jerk_time > 0):
             jerk_plan_type = 'dec_zero_acc'
             times.dec_jerk_time = (p.min_acc - p.a0) / p.min_jerk
             times.acc_jerk_time = -p.min_acc / p.max_jerk
         else:
-            min_acc_actual = -np.sqrt(2 * (ved - p.v0 + (0.5 * p.a0 * p.a0 / p.min_jerk)) * ((p.min_jerk * p.max_jerk) / (p.max_jerk - p.min_jerk)))
-            
+            min_acc_actual = -np.sqrt(2 * (ved - p.v0 + (0.5 * p.a0 * p.a0 / p.min_jerk)) * (
+                (p.min_jerk * p.max_jerk) / (p.max_jerk - p.min_jerk)))
+
             if (p.a0 > min_acc_actual):
                 jerk_plan_type = 'dec_acc'
                 times.dec_jerk_time = (min_acc_actual - p.a0) / p.min_jerk
-                times.acc_jerk_time = (-(p.a0 + p.min_jerk * times.dec_jerk_time) / p.max_jerk)
+                times.acc_jerk_time = (-(p.a0 + p.min_jerk *
+                                       times.dec_jerk_time) / p.max_jerk)
             else:
                 jerk_plan_type = 'acc'
                 times.dec_jerk_time = 0.0
