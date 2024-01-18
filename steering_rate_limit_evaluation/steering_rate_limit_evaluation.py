@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 
 # Parameters (can be adjusted as needed)
 wheelbase = 4.0  # length of the vehicle (m)
-vehicle_length = 5.0  # length of the vehicle (m)
+vehicle_length = 5.0  # length from rear wheel to the front of the vehicle (m)
 vehicle_width = 2.0  # width of the vehicle (m)
 margin_distance = 1.0  # lateral distance to move before stopping the simulation (m)
 
