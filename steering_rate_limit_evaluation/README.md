@@ -1,3 +1,18 @@
+# steering limit evaluation
+
+This code calculates the permissible steering angle for each vehicle speed based on the lateral acceleration threshold. The results are provided in the form of a 2D plot, showing the lateral acceleration for each velocity and steering angle.
+
+## Given parameters
+
+- wheelbase
+- margin_latacc_threshold
+
+## Output
+
+Example: The grid displays the lateral acceleration [m/ss] for various vehicle speeds [km/h] and steering angle [rad]. A threshold of 1.5 [m/ss] is set, and any value over this threshold is highlighted in red.
+
+![](steer_plot.png)
+
 # steering rate limit evaluation
 
 This code calculates the permissible steering rates for each vehicle speed based on the given vehicle shape and the lateral distance to obstacles. The results are provided in the form of a 2D plot, showing the time until collision with an obstacle for each vehicle speed and steering rate value.
