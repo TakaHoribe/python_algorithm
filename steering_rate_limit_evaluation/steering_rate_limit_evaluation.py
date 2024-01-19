@@ -9,6 +9,25 @@ import numpy as np
 from scipy.integrate import solve_ivp
 import matplotlib.pyplot as plt
 
+# Parameters (can be adjusted as needed)
+wheelbase = 4.0  
+vehicle_length = 5.0  # length from rear wheel to the front of the vehicle (m)
+vehicle_width = 2.0
+margin_distance = 1.0
+margin_time_threshold = 1.5  # Cell is colorized with red for the margin time less than this threshold
+rear_to_edge = np.sqrt((0.5 * vehicle_width) ** 2 + vehicle_length ** 2)
+psi = np.arctan(0.5 * vehicle_width / vehicle_length)  # Angle from rear center to front left edge
+
+# constant speed of the vehicle (m/s)
+MPS_TO_KMPH = 3.6
+vehicle_speed_array_kmph = np.array([1.0, 5.0, 10.0, 15.0, 20.0, 25.0, 30.0, 35.0, 40, 45, 50, 55, 60])
+vehicle_speed_array = vehicle_speed_array_kmph / MPS_TO_KMPH
+
+# rate at which the steering angle changes (rad/s)
+steering_angle_rate_array = np.array([0.002, 0.004, 0.006, 0.008, 0.01, 0.012, 0.015, 0.02, 0.03, 0.04, 
+                                      0.05, 0.06, 0.07, 0.08, 0.09, 0.1, 0.12, 0.14, 0.16, 0.18, 0.2, 
+                                      0.22, 0.24, 0.26, 0.28, 0.30, 0.32, 0.34, 0.36, 0.38, 0.4, 0.45, 0.5])  
+
 # Update the kinematic model to calculate the front wheel edge position
 def kinematic_model_with_front_wheel(t, state, vehicle_speed, steering_angle_rate, wheelbase, rear_to_edge):
     _, _, theta, steering_angle = state
@@ -66,24 +85,7 @@ def generate_2d_plot(result, vehicle_speed_array_kmph, steering_angle_rate_array
     plt.subplots_adjust(left=0.1, right=0.95, top=0.95, bottom=0.1)
     plt.show()
 
-# Parameters (can be adjusted as needed)
-wheelbase = 4.0  
-vehicle_length = 5.0  # length from rear wheel to the front of the vehicle (m)
-vehicle_width = 2.0
-margin_distance = 1.0
-margin_time_threshold = 1.5  # Cell is colorized with red for the margin time less than this threshold
-rear_to_edge = np.sqrt((0.5 * vehicle_width) ** 2 + vehicle_length ** 2)
-psi = np.arctan(0.5 * vehicle_width / vehicle_length)  # Angle from rear center to front left edge
 
-MPS_TO_KMPH = 3.6
-# constant speed of the vehicle (m/s)
-vehicle_speed_array_kmph = np.array([1.0, 5.0, 10.0, 15.0, 20.0, 25.0, 30.0, 35.0, 40, 45, 50, 55, 60])
-vehicle_speed_array = vehicle_speed_array_kmph / MPS_TO_KMPH
-
-# rate at which the steering angle changes (rad/s)
-steering_angle_rate_array = np.array([0.002, 0.004, 0.006, 0.008, 0.01, 0.012, 0.015, 0.02, 0.03, 0.04, 
-                                      0.05, 0.06, 0.07, 0.08, 0.09, 0.1, 0.12, 0.14, 0.16, 0.18, 0.2, 
-                                      0.22, 0.24, 0.26, 0.28, 0.30, 0.32, 0.34, 0.36, 0.38, 0.4, 0.45, 0.5])  
 
 result = np.zeros((len(vehicle_speed_array), len(steering_angle_rate_array)))
 
